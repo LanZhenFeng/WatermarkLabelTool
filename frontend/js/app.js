@@ -182,6 +182,10 @@ async function handleSave() {
     try {
         await api.saveProgress();
         ui.showToast('进度已保存', 'success');
+
+        // 刷新统计显示
+        await refreshDatasets();
+        await updateProgress();
     } catch (err) {
         ui.showToast('保存失败', 'error');
     }
@@ -209,6 +213,7 @@ async function createNewDataset() {
     try {
         await api.createType({
             name: data.name,
+            description: '',
             image_dirs: data.dirs,
             exclude_dirs: data.exclude,
             recursive: data.recursive,
@@ -216,6 +221,7 @@ async function createNewDataset() {
                 watermarked: data.targetWm,
                 non_watermarked: data.targetNwm
             },
+            priority: 1,
         });
 
         ui.showToast('创建成功', 'success');

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="水印检测数据集快速标注平台">
+    <title>水印标注平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🏷️</span>
+                <span>水印标注平台</span>
+            </div>
+
+            <div class="header-controls">
+                <div class="type-selector">
+                    <label for="dataset-type">类型:</label>
+                    <select id="dataset-type">
+                        <option value="">请选择数据类型</option>
+                    </select>
+                </div>
+
+                <div class="progress-badge" id="progress-panel">
+                    <span>进度:</span>
+                    <span class="count" id="progress-count">0/0</span>
+                </div>
+
+                <div class="target-stats" id="target-stats" style="display: none;">
+                    <div class="stat-item watermark">
+                        <span class="stat-label">🔴 水印</span>
+                        <span class="stat-value" id="stat-watermarked">0/0</span>
+                    </div>
+                    <div class="stat-item no-watermark">
+                        <span class="stat-label">🟢 无水印</span>
+                        <span class="stat-value" id="stat-no-watermark">0/0</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="showManageModal()">
+                    <span>📂</span> 管理
+                </button>
+
+                <button class="btn btn-primary" onclick="exportAnnotations()">
+                    <span>📥</span> 导出
+                </button>
+            </div>
+        </header>
+
+        <!-- 主内容 -->
+        <div class="main-content">
+            <!-- 侧边栏 -->
+            <aside class="sidebar">
+                <h3 class="sidebar-title">数据类型</h3>
+                <ul class="type-list" id="type-list">
+                    <!-- 动态填充 -->
+                </ul>
+
+                <div class="sidebar-actions">
+                    <button class="btn btn-secondary" onclick="showAddTypeModal()">
+                        <span>➕</span> 添加类型
+                    </button>
+                </div>
+            </aside>
+
+            <!-- 图片区域 -->
+            <main class="image-area">
+                <div class="status-bar">
+                    <div class="status-badge pending" id="status-badge">
+                        <span class="status-dot"></span>
+                        <span id="status-text">待标注</span>
+                    </div>
+                </div>
+
+                <div class="image-container" id="image-container">
+                    <div class="image-placeholder" id="image-placeholder">
+                        <div class="icon">🖼️</div>
+                        <p>请选择数据类型开始标注</p>
+                    </div>
+                    <img class="image-display" id="image-display" style="display: none;" alt="待标注图片">
+
+                    <button class="image-nav prev" onclick="navigatePrev()">◀</button>
+                    <button class="image-nav next" onclick="navigateNext()">▶</button>
+
+                    <div class="image-index" id="image-index" style="display: none;">
+                        <span id="current-index">0</span> / <span id="total-images">0</span>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            <div class="action-buttons">
+                <button class="action-btn watermarked" onclick="annotate(1)">
+                    <span class="icon">🔴</span>
+                    <span class="label">有水印</span>
+                    <span class="shortcut">1 / W</span>
+                </button>
+
+                <button class="action-btn no-watermark" onclick="annotate(0)">
+                    <span class="icon">🟢</span>
+                    <span class="label">无水印</span>
+                    <span class="shortcut">2 / N</span>
+                </button>
+
+                <button class="action-btn skip" onclick="skipImage()">
+                    <span class="icon">🟡</span>
+                    <span class="label">跳过</span>
+                    <span class="shortcut">S</span>
+                </button>
+
+                <button class="action-btn delete" onclick="deleteCurrentImage()">
+                    <span class="icon">🗑️</span>
+                    <span class="label">删除</span>
+                    <span class="shortcut">X</span>
+                </button>
+            </div>
+
+            <div class="footer-info">
+                <div class="file-path">
+                    <span>📁</span>
+                    <span id="current-path">未选择文件</span>
+                </div>
+
+                <div class="shortcuts-hint">
+                    <span class="shortcut-item">
+                        <span class="shortcut-key">Ctrl+Z</span> 撤销
+                    </span>
+                    <span class="shortcut-item">
+                        <span class="shortcut-key">Ctrl+Y</span> 重做
+                    </span>
+                    <span class="shortcut-item">
+                        <span class="shortcut-key">Ctrl+S</span> 保存
+                    </span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 添加/编辑类型模态框 -->
+    <div class="modal-overlay" id="type-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">添加数据类型</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="type-form">
+                    <div class="form-group">
+                        <label class="form-label">类型名称</label>
+                        <input type="text" class="form-input" id="type-name" placeholder="如: 产品图" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">图片目录 <span class="form-hint-inline">(每行一个，支持多个目录)</span></label>
+                        <textarea class="form-input" id="type-dirs" rows="3"
+                            placeholder="/path/to/images1&#10;/path/to/images2" required></textarea>
+                        <small class="form-hint">输入图片所在目录的绝对路径，每行一个</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="type-recursive" checked>
+                            <span>递归扫描子目录</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">排除目录 <span class="form-hint-inline">(每行一个)</span></label>
+                        <textarea class="form-input" id="type-exclude" rows="3"
+                            placeholder="thumbnails&#10;cache&#10;backup"></textarea>
+                        <small class="form-hint">输入要排除的目录名称，支持匹配路径</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">描述</label>
+                        <input type="text" class="form-input" id="type-desc" placeholder="可选描述">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">目标有水印数</label>
+                            <input type="number" class="form-input" id="target-watermarked" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">目标无水印数</label>
+                            <input type="number" class="form-input" id="target-no-watermark" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">优先级</label>
+                        <input type="number" class="form-input" id="type-priority" value="1" min="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveType()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理模态框 -->
+    <div class="modal-overlay" id="manage-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">数据类型管理</h3>
+                <button class="modal-close" onclick="closeManageModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="manage-list">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="showAddTypeModal()">添加新类型</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/ui.js"></script>
+    <script src="/static/js/keyboard.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>
