@@ -510,6 +510,14 @@ body {
     background: rgba(234, 179, 8, 0.2);
 }
 
+.action-btn.delete {
+    border-color: #ef4444;
+}
+
+.action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
 .action-btn .icon {
     font-size: 24px;
 }
