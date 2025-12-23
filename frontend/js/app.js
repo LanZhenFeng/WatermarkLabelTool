@@ -23,17 +23,17 @@ async function init() {
         }
     });
 
-    // 加载数据类型
-    await loadTypes();
+    // 快速加载数据类型列表（跳过图片扫描）
+    await loadTypes(true);
 
     ui.showToast('欢迎使用水印标注平台', 'info');
 }
 
 // ============ 数据类型 ============
 
-async function loadTypes() {
+async function loadTypes(skipScan = false) {
     try {
-        state.types = await api.getTypes();
+        state.types = await api.getTypes(skipScan);
         ui.renderTypeList(state.types, state.currentType);
         ui.renderTypeSelector(state.types, state.currentType);
     } catch (error) {
