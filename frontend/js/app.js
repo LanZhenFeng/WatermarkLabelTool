@@ -50,7 +50,48 @@ async function selectType(typeName) {
     ui.renderTypeList(state.types, typeName);
     ui.renderTypeSelector(state.types, typeName);
 
+    // 更新目标统计显示
+    updateTargetStats(typeName);
+
     await loadCurrentImage();
+}
+
+// 更新目标进度统计面板
+function updateTargetStats(typeName) {
+    const type = state.types.find(t => t.name === typeName);
+    const statsPanel = document.getElementById('target-stats');
+
+    if (!type) {
+        statsPanel.style.display = 'none';
+        return;
+    }
+
+    const target = type.target_count || {};
+    const current = type.current_count || {};
+    const hasTarget = (target.watermarked || 0) + (target.non_watermarked || 0) > 0;
+
+    if (!hasTarget) {
+        statsPanel.style.display = 'none';
+        return;
+    }
+
+    statsPanel.style.display = 'flex';
+
+    // 更新有水印统计
+    const wmCurrent = current.watermarked || 0;
+    const wmTarget = target.watermarked || 0;
+    const wmComplete = wmTarget > 0 && wmCurrent >= wmTarget;
+    const wmEl = document.getElementById('stat-watermarked');
+    wmEl.textContent = `${wmCurrent}/${wmTarget}`;
+    wmEl.className = `stat-value ${wmComplete ? 'complete' : ''}`;
+
+    // 更新无水印统计
+    const nwmCurrent = current.non_watermarked || 0;
+    const nwmTarget = target.non_watermarked || 0;
+    const nwmComplete = nwmTarget > 0 && nwmCurrent >= nwmTarget;
+    const nwmEl = document.getElementById('stat-no-watermark');
+    nwmEl.textContent = `${nwmCurrent}/${nwmTarget}`;
+    nwmEl.className = `stat-value ${nwmComplete ? 'complete' : ''}`;
 }
 
 async function saveType() {

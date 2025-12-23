@@ -120,12 +120,23 @@ class DatasetService:
             label=label
         )
     
-    def get_all_types(self) -> List[DatasetTypeResponse]:
-        """获取所有数据类型"""
+    def get_all_types(self, skip_scan: bool = False) -> List[DatasetTypeResponse]:
+        """获取所有数据类型
+        
+        Args:
+            skip_scan: 如果True，跳过图片扫描（使用缓存或显示-1）
+        """
         result = []
         for dt in config_manager.config.dataset_types:
-            images = self.get_images(dt.name)
-            progress = annotation_service.get_progress(dt.name, len(images))
+            # 优化：跳过扫描时使用缓存值或显示为未知
+            if skip_scan and dt.name not in self._image_cache:
+                total_images = -1  # 表示尚未扫描
+                annotated_count = 0
+            else:
+                images = self.get_images(dt.name)
+                progress = annotation_service.get_progress(dt.name, len(images))
+                total_images = len(images)
+                annotated_count = progress["annotated_count"]
             
             result.append(DatasetTypeResponse(
                 name=dt.name,
@@ -136,8 +147,8 @@ class DatasetService:
                 target_count=dt.target_count.model_dump(),
                 current_count=dt.current_count.model_dump(),
                 priority=dt.priority,
-                total_images=len(images),
-                annotated_count=progress["annotated_count"]
+                total_images=total_images,
+                annotated_count=annotated_count
             ))
         
         return sorted(result, key=lambda x: x.priority)

@@ -28,8 +28,8 @@ const api = {
 
     // ============ 数据类型管理 ============
 
-    async getTypes() {
-        return this.request('/types');
+    async getTypes(skipScan = false) {
+        return this.request(`/types?skip_scan=${skipScan}`);
     },
 
     async createType(data) {

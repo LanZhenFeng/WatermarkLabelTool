@@ -111,14 +111,28 @@ const ui = {
      */
     renderTypeList(types, activeType) {
         const list = document.getElementById('type-list');
-        list.innerHTML = types.map(type => `
-            <li class="type-item ${type.name === activeType ? 'active' : ''}" 
+        list.innerHTML = types.map(type => {
+            const target = type.target_count || {};
+            const current = type.current_count || {};
+            const targetTotal = (target.watermarked || 0) + (target.non_watermarked || 0);
+            const currentTotal = (current.watermarked || 0) + (current.non_watermarked || 0);
+
+            // 计算完成状态
+            const hasTarget = targetTotal > 0;
+            const isComplete = hasTarget && currentTotal >= targetTotal;
+            const progressText = hasTarget
+                ? `${currentTotal}/${targetTotal}`
+                : `${type.annotated_count}/${type.total_images}`;
+            const statusIcon = isComplete ? '✅' : '';
+
+            return `
+            <li class="type-item ${type.name === activeType ? 'active' : ''} ${isComplete ? 'complete' : ''}" 
                 onclick="selectType('${type.name}')">
                 <div class="checkbox">${type.name === activeType ? '✓' : ''}</div>
-                <span class="name">${type.name}</span>
-                <span class="count">${type.annotated_count}/${type.total_images}</span>
+                <span class="name">${type.name} ${statusIcon}</span>
+                <span class="count ${isComplete ? 'complete' : ''}">${progressText}</span>
             </li>
-        `).join('');
+        `}).join('');
     },
 
     /**

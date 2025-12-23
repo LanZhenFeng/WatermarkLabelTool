@@ -24,9 +24,13 @@ router = APIRouter(prefix="/api")
 # ============ 数据类型管理 ============
 
 @router.get("/types", response_model=list[DatasetTypeResponse])
-async def get_types():
-    """获取所有数据类型"""
-    return dataset_service.get_all_types()
+async def get_types(skip_scan: bool = False):
+    """获取所有数据类型
+    
+    Args:
+        skip_scan: 如果True，跳过图片扫描以加快加载速度
+    """
+    return dataset_service.get_all_types(skip_scan=skip_scan)
 
 
 @router.post("/types", response_model=DatasetTypeResponse)

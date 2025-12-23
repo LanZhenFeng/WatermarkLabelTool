@@ -28,9 +28,20 @@
                     </select>
                 </div>
 
-                <div class="progress-badge">
+                <div class="progress-badge" id="progress-panel">
                     <span>进度:</span>
                     <span class="count" id="progress-count">0/0</span>
+                </div>
+
+                <div class="target-stats" id="target-stats" style="display: none;">
+                    <div class="stat-item watermark">
+                        <span class="stat-label">🔴 水印</span>
+                        <span class="stat-value" id="stat-watermarked">0/0</span>
+                    </div>
+                    <div class="stat-item no-watermark">
+                        <span class="stat-label">🟢 无水印</span>
+                        <span class="stat-value" id="stat-no-watermark">0/0</span>
+                    </div>
                 </div>
 
                 <button class="btn btn-secondary" onclick="showManageModal()">

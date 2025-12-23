@@ -161,6 +161,42 @@ body {
     font-weight: 600;
 }
 
+.target-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-tertiary);
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+}
+
+.target-stats .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.target-stats .stat-label {
+    color: var(--text-secondary);
+}
+
+.target-stats .stat-value {
+    font-weight: 600;
+}
+
+.target-stats .stat-item.watermark .stat-value {
+    color: var(--accent-red);
+}
+
+.target-stats .stat-item.no-watermark .stat-value {
+    color: var(--accent-green);
+}
+
+.target-stats .stat-value.complete {
+    color: var(--accent-green) !important;
+}
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -218,6 +254,8 @@ body {
     list-style: none;
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
+    /* Required for flex item scrolling */
 }
 
 .type-item {
@@ -274,6 +312,15 @@ body {
     color: white;
 }
 
+.type-item.complete:not(.active) .count {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--accent-green);
+}
+
+.type-item .count.complete {
+    font-weight: 600;
+}
+
 .sidebar-actions {
     display: flex;
     flex-direction: column;
@@ -281,6 +328,8 @@ body {
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    /* Prevent buttons from being squeezed out */
 }
 
 /* ============ 图片区域 ============ */
