@@ -1,422 +1,336 @@
 /**
- * 主应用逻辑
+ * Main Application
+ * Connects API, State, and UI.
  */
 
-// 应用状态
-const state = {
-    currentType: null,
-    currentIndex: 0,
-    currentImage: null,
-    types: [],
-    isLoading: false,
-};
+import { api } from './api.js';
+import { store } from './state.js';
+import { ui } from './ui.js';
 
-// ============ 初始化 ============
+// ============ Logic ============
 
-async function init() {
-    console.log('🚀 水印标注平台启动');
-
-    // 绑定事件
-    document.getElementById('dataset-type').addEventListener('change', (e) => {
-        if (e.target.value) {
-            selectType(e.target.value);
-        }
-    });
-
-    // 快速加载数据类型列表（跳过图片扫描）
-    await loadTypes(true);
-
-    ui.showToast('欢迎使用水印标注平台', 'info');
-}
-
-// ============ 数据类型 ============
-
-async function loadTypes(skipScan = false) {
+async function refreshDatasets() {
     try {
-        state.types = await api.getTypes(skipScan);
-        ui.renderTypeList(state.types, state.currentType);
-        ui.renderTypeSelector(state.types, state.currentType);
-    } catch (error) {
-        ui.showToast('加载数据类型失败: ' + error.message, 'error');
+        const types = await api.getTypes(true); // fast load first
+        store.setState({ datasets: types });
+    } catch (err) {
+        ui.showToast('无法加载数据类型', 'error');
     }
 }
 
-async function selectType(typeName) {
-    if (state.currentType === typeName) return;
+async function selectDataset(name) {
+    if (store.getState().currentDataset === name) return;
 
-    state.currentType = typeName;
-    state.currentIndex = 0;
+    store.updateDataset(name);
+    ui.setHeader(name);
 
-    ui.renderTypeList(state.types, typeName);
-    ui.renderTypeSelector(state.types, typeName);
-
-    // 更新目标统计显示
-    updateTargetStats(typeName);
+    // Find target stats for this dataset
+    const dataset = store.getState().datasets.find(d => d.name === name);
+    if (dataset && dataset.target_count) {
+        store.updateStats({
+            targetWatermarked: dataset.target_count.watermarked || 0,
+            targetNoWatermarked: dataset.target_count.non_watermarked || 0
+        });
+    }
 
     await loadCurrentImage();
+    await updateProgress(); // Fetch real progress from API
 }
 
-// 更新目标进度统计面板
-async function updateTargetStats(typeName) {
-    const type = state.types.find(t => t.name === typeName);
-    const statsPanel = document.getElementById('target-stats');
+async function loadCurrentImage() {
+    const dataset = store.getState().currentDataset;
+    if (!dataset) return;
 
-    if (!type) {
-        statsPanel.style.display = 'none';
-        return;
-    }
-
-    const target = type.target_count || {};
-    const hasTarget = (target.watermarked || 0) + (target.non_watermarked || 0) > 0;
-
-    if (!hasTarget) {
-        statsPanel.style.display = 'none';
-        return;
-    }
-
-    statsPanel.style.display = 'flex';
-
-    // 从进度API获取实际的标注统计（而非配置文件中的累积值）
+    store.setLoading(true);
     try {
-        const progress = await api.getProgress(typeName);
+        // Get metadata
+        const info = await api.getCurrentImage(dataset);
 
-        // 更新有水印统计
-        const wmCurrent = progress.watermarked_count || 0;
-        const wmTarget = target.watermarked || 0;
-        const wmComplete = wmTarget > 0 && wmCurrent >= wmTarget;
-        const wmEl = document.getElementById('stat-watermarked');
-        wmEl.textContent = `${wmCurrent}/${wmTarget}`;
-        wmEl.className = `stat-value ${wmComplete ? 'complete' : ''}`;
+        // Get image data
+        const imageData = await api.getImageBase64(dataset, info.index);
 
-        // 更新无水印统计
-        const nwmCurrent = progress.non_watermarked_count || 0;
-        const nwmTarget = target.non_watermarked || 0;
-        const nwmComplete = nwmTarget > 0 && nwmCurrent >= nwmTarget;
-        const nwmEl = document.getElementById('stat-no-watermark');
-        nwmEl.textContent = `${nwmCurrent}/${nwmTarget}`;
-        nwmEl.className = `stat-value ${nwmComplete ? 'complete' : ''}`;
-    } catch (error) {
-        console.warn('获取进度失败:', error);
+        store.updateImage({
+            data: imageData.base64,
+            path: info.path,
+            index: info.index,
+            status: info.status
+        });
+
+    } catch (err) {
+        console.error(err);
+        // If it's a 404 or index error, it might mean empty dataset or end
+        store.updateImage({ data: null, path: null });
+    } finally {
+        store.setLoading(false);
     }
 }
 
-async function saveType() {
-    const name = document.getElementById('type-name').value.trim();
-    const dirsText = document.getElementById('type-dirs').value.trim();
-    const imageDirs = dirsText ? dirsText.split('\n').map(s => s.trim()).filter(s => s) : [];
-    const description = document.getElementById('type-desc').value.trim();
-    const recursive = document.getElementById('type-recursive').checked;
-    const excludeText = document.getElementById('type-exclude').value.trim();
-    const excludeDirs = excludeText ? excludeText.split('\n').map(s => s.trim()).filter(s => s) : [];
-    const targetWatermarked = parseInt(document.getElementById('target-watermarked').value) || 0;
-    const targetNoWatermark = parseInt(document.getElementById('target-no-watermark').value) || 0;
-    const priority = parseInt(document.getElementById('type-priority').value) || 1;
+async function updateProgress() {
+    const dataset = store.getState().currentDataset;
+    if (!dataset) return;
 
-    if (!name || imageDirs.length === 0) {
-        ui.showToast('请填写类型名称和至少一个图片目录', 'warning');
+    try {
+        const progress = await api.getProgress(dataset);
+        // progress: { total_images, annotated_count, watermarked_count, non_watermarked_count, ... }
+
+        store.updateStats({
+            watermarked: progress.watermarked_count,
+            noWatermarked: progress.non_watermarked_count
+        });
+
+        store.updateImage({
+            total: progress.total_images
+        });
+
+    } catch (err) {
+        // Silent fail for stats
+    }
+}
+
+// ============ Actions ============
+
+async function handleAnnotation(label) {
+    // Label: 1 (Watermarked), 0 (No Watermark)
+    // Visual Feedback
+    const btnId = label === 1 ? 'btn-watermarked' : 'btn-no-watermarked';
+    ui.highlightButton(btnId);
+
+    const state = store.getState();
+    if (!state.currentDataset || !state.image.path) {
+        ui.showToast('请先选择数据类型', 'warning');
+        return;
+    }
+
+    try {
+        await api.createAnnotation(state.image.path, label, state.currentDataset);
+
+        const labelText = label === 1 ? '有水印' : '无水印';
+        ui.showToast(`已标记: ${labelText}`, label === 1 ? 'error' : 'success'); // Error color for red/watermark, Success for green
+
+        // Optimistic update could go here, but let's just go next
+        await api.navigateNext(state.currentDataset);
+        await loadCurrentImage();
+        await updateProgress();
+
+    } catch (err) {
+        ui.showToast(`操作失败: ${err.message}`, 'error');
+    }
+}
+
+async function handleSkip() {
+    ui.highlightButton('btn-skip');
+    const state = store.getState();
+    if (!state.currentDataset || !state.image.path) return;
+
+    try {
+        await api.skipImage(state.image.path, state.currentDataset);
+        ui.showToast('已跳过', 'info');
+        await api.navigateNext(state.currentDataset);
+        await loadCurrentImage();
+    } catch (err) {
+        ui.showToast(`跳过失败: ${err.message}`, 'error');
+    }
+}
+
+async function handleDelete() {
+    const state = store.getState();
+    if (!state.currentDataset || !state.image.path) return;
+
+    if (!confirm('确定要从磁盘删除这张图片吗？此操作不可恢复。')) return;
+
+    try {
+        await api.deleteImage(state.currentDataset, state.image.path);
+        ui.showToast('图片已删除', 'success');
+        // Refresh list might be needed if it was the last one, but loadCurrentImage handles errors
+        await loadCurrentImage();
+        await updateProgress();
+    } catch (err) {
+        ui.showToast(`删除失败: ${err.message}`, 'error');
+    }
+}
+
+async function handleNavigate(direction) {
+    const dataset = store.getState().currentDataset;
+    if (!dataset) return;
+
+    try {
+        if (direction === 'next') await api.navigateNext(dataset);
+        else await api.navigatePrev(dataset);
+
+        await loadCurrentImage();
+    } catch (err) {
+        ui.showToast('无法导航', 'error');
+    }
+}
+
+async function handleUndo() {
+    try {
+        const res = await api.undo();
+        if (res.success) {
+            ui.showToast('撤销成功', 'info');
+            await loadCurrentImage();
+            await updateProgress();
+        } else {
+            ui.showToast(res.message, 'warning');
+        }
+    } catch (err) {
+        ui.showToast('撤销失败', 'error');
+    }
+}
+
+async function handleSave() {
+    try {
+        await api.saveProgress();
+        ui.showToast('进度已保存', 'success');
+    } catch (err) {
+        ui.showToast('保存失败', 'error');
+    }
+}
+
+async function handleExport() {
+    const dataset = store.getState().currentDataset;
+    try {
+        const res = await api.exportAnnotations(dataset);
+        if (res.success) {
+            ui.showToast(`导出成功: ${res.data.output_path}`, 'success');
+        }
+    } catch (err) {
+        ui.showToast('导出失败', 'error');
+    }
+}
+
+async function createNewDataset() {
+    const data = ui.getModalData();
+    if (!data.name || data.dirs.length === 0) {
+        ui.showToast('请填写名称和图片目录', 'warning');
         return;
     }
 
     try {
         await api.createType({
-            name,
-            description,
-            image_dirs: imageDirs,
-            recursive,
-            exclude_dirs: excludeDirs,
+            name: data.name,
+            image_dirs: data.dirs,
+            exclude_dirs: data.exclude,
+            recursive: data.recursive,
             target_count: {
-                watermarked: targetWatermarked,
-                non_watermarked: targetNoWatermark,
+                watermarked: data.targetWm,
+                non_watermarked: data.targetNwm
             },
-            priority,
         });
 
-        ui.showToast('保存成功', 'success');
-        closeModal();
-        await loadTypes();
-
-        // 自动选择新类型
-        selectType(name);
-    } catch (error) {
-        ui.showToast('保存失败: ' + error.message, 'error');
+        ui.showToast('创建成功', 'success');
+        ui.toggleModal(false);
+        await refreshDatasets();
+        selectDataset(data.name);
+    } catch (err) {
+        ui.showToast(err.message, 'error');
     }
 }
 
-async function editType(name) {
-    const type = state.types.find(t => t.name === name);
-    if (!type) return;
+// ============ Event Bindings ============
 
-    document.getElementById('modal-title').textContent = '编辑数据类型';
-    document.getElementById('type-name').value = type.name;
-    document.getElementById('type-name').disabled = true;
-    document.getElementById('type-dirs').value = (type.image_dirs || []).join('\n');
-    document.getElementById('type-recursive').checked = type.recursive !== false;
-    document.getElementById('type-exclude').value = (type.exclude_dirs || []).join('\n');
-    document.getElementById('type-desc').value = type.description;
-    document.getElementById('target-watermarked').value = type.target_count.watermarked;
-    document.getElementById('target-no-watermark').value = type.target_count.non_watermarked;
-    document.getElementById('type-priority').value = type.priority;
+function bindEvents() {
+    // Sidebar Dataset Selection
+    window.addEventListener('dataset-select', (e) => selectDataset(e.detail));
 
-    document.getElementById('type-modal').classList.add('active');
-    closeManageModal();
-}
+    // Navbar Buttons
+    document.getElementById('btn-export').onclick = handleExport;
 
-async function deleteType(name) {
-    if (!confirm(`确定要删除类型 "${name}" 吗？`)) return;
+    // Toolbar Buttons
+    document.getElementById('btn-delete').onclick = handleDelete;
+    document.getElementById('btn-prev').onclick = () => handleNavigate('prev');
+    document.getElementById('btn-next').onclick = () => handleNavigate('next');
+    document.getElementById('btn-undo').onclick = handleUndo;
 
-    try {
-        await api.deleteType(name);
-        ui.showToast('删除成功', 'success');
+    // Action Buttons
+    document.getElementById('btn-watermarked').onclick = () => handleAnnotation(1);
+    document.getElementById('btn-no-watermarked').onclick = () => handleAnnotation(0);
+    document.getElementById('btn-skip').onclick = handleSkip;
 
-        if (state.currentType === name) {
-            state.currentType = null;
-            ui.hideImage();
-            ui.updateFilePath(null);
-        }
-
-        await loadTypes();
-        refreshManageList();
-    } catch (error) {
-        ui.showToast('删除失败: ' + error.message, 'error');
-    }
-}
-
-// ============ 图片加载 ============
-
-async function loadCurrentImage() {
-    if (!state.currentType) {
-        ui.hideImage();
-        return;
-    }
-
-    if (state.isLoading) return;
-    state.isLoading = true;
-
-    ui.showLoading();
-
-    try {
-        // 获取当前图片信息
-        const imageInfo = await api.getCurrentImage(state.currentType);
-        state.currentImage = imageInfo;
-        state.currentIndex = imageInfo.index;
-
-        // 获取进度
-        const progress = await api.getProgress(state.currentType);
-        ui.updateProgress(progress.annotated_count, progress.total_images);
-
-        // 获取图片数据
-        const imageData = await api.getImageBase64(state.currentType, imageInfo.index);
-        ui.showImage(imageData.base64);
-
-        // 更新UI
-        ui.updateStatusBadge(imageInfo.status);
-        ui.updateFilePath(imageInfo.path);
-
-        document.getElementById('current-index').textContent = imageInfo.index + 1;
-        document.getElementById('total-images').textContent = progress.total_images;
-
-    } catch (error) {
-        ui.showToast('加载图片失败: ' + error.message, 'error');
-        ui.hideImage();
-    } finally {
-        state.isLoading = false;
-    }
-}
-
-async function loadImageByIndex(index) {
-    if (!state.currentType || state.isLoading) return;
-
-    state.isLoading = true;
-    ui.showLoading();
-
-    try {
-        const imageInfo = await api.getImageByIndex(state.currentType, index);
-        state.currentImage = imageInfo;
-        state.currentIndex = imageInfo.index;
-
-        const imageData = await api.getImageBase64(state.currentType, index);
-        ui.showImage(imageData.base64);
-
-        ui.updateStatusBadge(imageInfo.status);
-        ui.updateFilePath(imageInfo.path);
-
-        const progress = await api.getProgress(state.currentType);
-        ui.updateProgress(progress.annotated_count, progress.total_images);
-
-        document.getElementById('current-index').textContent = index + 1;
-
-    } catch (error) {
-        ui.showToast('加载失败: ' + error.message, 'error');
-    } finally {
-        state.isLoading = false;
-    }
-}
-
-// ============ 标注操作 ============
-
-async function annotate(label) {
-    if (!state.currentType || !state.currentImage) {
-        ui.showToast('请先选择数据类型和图片', 'warning');
-        return;
-    }
-
-    try {
-        await api.createAnnotation(
-            state.currentImage.path,
-            label,
-            state.currentType
-        );
-
-        ui.showToast(label === 1 ? '已标记为有水印' : '已标记为无水印', 'success');
-        ui.updateStatusBadge(label === 1 ? 'watermarked' : 'no_watermark');
-
-        // 自动跳转到下一张
-        await navigateNext();
-
-        // 刷新类型列表显示最新进度
-        await loadTypes();
-
-        // 更新目标统计面板
-        await updateTargetStats(state.currentType);
-
-    } catch (error) {
-        ui.showToast('标注失败: ' + error.message, 'error');
-    }
-}
-
-async function skipImage() {
-    if (!state.currentType || !state.currentImage) {
-        ui.showToast('请先选择数据类型和图片', 'warning');
-        return;
-    }
-
-    try {
-        await api.skipImage(state.currentImage.path, state.currentType);
-        ui.showToast('已跳过', 'info');
-        ui.updateStatusBadge('skipped');
-
-        await navigateNext();
-
-    } catch (error) {
-        ui.showToast('操作失败: ' + error.message, 'error');
-    }
-}
-
-async function deleteCurrentImage() {
-    if (!state.currentType || !state.currentImage) {
-        ui.showToast('没有当前图片', 'warning');
-        return;
-    }
-
-    // 确认删除
-    const confirmed = confirm(`确定要删除这张图片吗？\n\n${state.currentImage.path}\n\n此操作不可恢复！`);
-    if (!confirmed) return;
-
-    try {
-        const result = await api.deleteImage(state.currentType, state.currentImage.path);
-        ui.showToast(result.message, 'success');
-
-        // 刷新列表并加载下一张
-        await loadTypes();
-        await loadCurrentImage();
-
-    } catch (error) {
-        ui.showToast('删除失败: ' + error.message, 'error');
-    }
-}
-
-// ============ 导航 ============
-
-async function navigateNext() {
-    if (!state.currentType) return;
-
-    try {
-        const result = await api.navigateNext(state.currentType);
-        if (result.success === false) {
-            ui.showToast('已经是最后一张', 'info');
-            return;
-        }
-        await loadImageByIndex(result.index);
-    } catch (error) {
-        ui.showToast('导航失败: ' + error.message, 'error');
-    }
-}
-
-async function navigatePrev() {
-    if (!state.currentType) return;
-
-    try {
-        const result = await api.navigatePrev(state.currentType);
-        if (result.success === false) {
-            ui.showToast('已经是第一张', 'info');
-            return;
-        }
-        await loadImageByIndex(result.index);
-    } catch (error) {
-        ui.showToast('导航失败: ' + error.message, 'error');
-    }
-}
-
-// ============ 撤销/重做 ============
-
-async function undoAction() {
-    try {
-        const result = await api.undo();
-        if (result.success) {
-            ui.showToast('已撤销', 'info');
-            await loadCurrentImage();
-            await loadTypes();
+    // Modal
+    const safeBind = (id, fn) => {
+        const el = document.getElementById(id);
+        if (el) {
+            console.log(`Binding click event to ${id}`);
+            el.addEventListener('click', (e) => {
+                console.log(`Clicked ${id}`);
+                fn(e);
+            });
         } else {
-            ui.showToast(result.message, 'warning');
+            console.warn(`Element ${id} not found for binding`);
         }
-    } catch (error) {
-        ui.showToast('撤销失败: ' + error.message, 'error');
-    }
+    };
+
+    safeBind('btn-add-type', () => {
+        console.log('Open modal via Add button');
+        ui.toggleModal(true);
+    });
+    safeBind('btn-manage', () => {
+        console.log('Open modal via Manage button');
+        ui.toggleModal(true);
+    });
+
+    safeBind('modal-close', () => ui.toggleModal(false));
+    safeBind('modal-cancel', () => ui.toggleModal(false));
+    safeBind('modal-save', createNewDataset);
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ignore if typing in input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        switch (e.key.toLowerCase()) {
+            case '1':
+            case 'w':
+            case 'a': // New: A for Watermarked
+                handleAnnotation(1);
+                break;
+            case '2':
+            case 'n':
+            case 'd': // New: D for No Watermarked
+                handleAnnotation(0);
+                break;
+            case 's':
+                handleSkip();
+                break;
+            case 'x':
+            case 'delete':
+                handleDelete();
+                break;
+            case 'arrowright':
+                // case 'd': // Removed D from Next
+                handleNavigate('next');
+                break;
+            case 'arrowleft':
+                // case 'a': // Removed A from Prev
+                handleNavigate('prev');
+                break;
+            case 'z':
+                if (e.ctrlKey || e.metaKey) handleUndo();
+                break;
+            case 's':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    handleSave();
+                }
+                break;
+        }
+    });
+
+    // Store Subscriptions
+    store.subscribe((state) => {
+        ui.renderDatasetList(state.datasets, state.currentDataset);
+        ui.updateImageDisplay(state.image);
+        ui.updateStats(state.stats);
+    });
+
+    // Init Zoom
+    ui.initZoom();
 }
 
-async function redoAction() {
-    try {
-        const result = await api.redo();
-        if (result.success) {
-            ui.showToast('已重做', 'info');
-            await loadCurrentImage();
-            await loadTypes();
-        } else {
-            ui.showToast(result.message, 'warning');
-        }
-    } catch (error) {
-        ui.showToast('重做失败: ' + error.message, 'error');
-    }
-}
-
-// ============ 保存/导出 ============
-
-async function saveProgress() {
-    try {
-        await api.saveProgress();
-        ui.showToast('进度已保存', 'success');
-
-        // 刷新统计显示
-        await loadTypes();
-        if (state.currentType) {
-            await updateTargetStats(state.currentType);
-        }
-    } catch (error) {
-        ui.showToast('保存失败: ' + error.message, 'error');
-    }
-}
-
-async function exportAnnotations() {
-    try {
-        const result = await api.exportAnnotations(state.currentType);
-        if (result.success) {
-            ui.showToast(`导出成功: ${result.data.output_path}`, 'success');
-        }
-    } catch (error) {
-        ui.showToast('导出失败: ' + error.message, 'error');
-    }
-}
-
-// ============ 启动 ============
-
-document.addEventListener('DOMContentLoaded', init);
+// ============ Init ============
+(async function init() {
+    bindEvents();
+    await refreshDatasets();
+    ui.showToast('Watermark Tool Ready', 'info');
+})();

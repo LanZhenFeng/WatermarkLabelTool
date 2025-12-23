@@ -1,219 +1,255 @@
 /**
- * UI 组件和工具函数
+ * UI Controller
+ * Handles all DOM updates and interactions.
  */
 
-const ui = {
+const elements = {
+    datasetList: document.getElementById('dataset-list'),
+
+    // Main Content
+    currentDatasetName: document.getElementById('current-dataset-name'),
+    currentImageName: document.getElementById('current-image-name'),
+
+    // Image Viewer
+    imageWrapper: document.getElementById('image-wrapper'),
+    mainImage: document.getElementById('main-image'),
+    emptyState: document.getElementById('empty-state'),
+    loadingSpinner: document.getElementById('loading-spinner'),
+
+    // Stats
+    statWm: document.getElementById('stat-wm'),
+    statNwm: document.getElementById('stat-nwm'),
+    statsGroup: document.getElementById('stats-group'),
+    statPillWm: document.querySelector('.stat-pill.watermarked'),
+    statPillNwm: document.querySelector('.stat-pill.no-watermarked'),
+
+    // Counter
+    counterCurrent: document.querySelector('#image-counter .current'),
+    counterTotal: document.querySelector('#image-counter .total'),
+
+    // Toasts
+    toastContainer: document.getElementById('toast-container'),
+
+    // Modal
+    datasetModal: document.getElementById('dataset-modal'),
+    modalForm: document.getElementById('dataset-form'),
+};
+
+export const ui = {
     /**
-     * 显示 Toast 通知
+     * Render the list of datasets in the sidebar
      */
-    showToast(message, type = 'info', duration = 3000) {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
+    renderDatasetList(datasets, currentName) {
+        elements.datasetList.innerHTML = '';
 
-        const icons = {
-            success: '✅',
-            error: '❌',
-            warning: '⚠️',
-            info: 'ℹ️',
-        };
-
-        toast.innerHTML = `
-            <span>${icons[type] || icons.info}</span>
-            <span>${message}</span>
-        `;
-
-        container.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.animation = 'slideIn 0.3s ease reverse';
-            setTimeout(() => toast.remove(), 300);
-        }, duration);
-    },
-
-    /**
-     * 更新状态徽章
-     */
-    updateStatusBadge(status) {
-        const badge = document.getElementById('status-badge');
-        const text = document.getElementById('status-text');
-
-        const statusMap = {
-            pending: { class: 'pending', text: '待标注' },
-            watermarked: { class: 'watermarked', text: '有水印' },
-            no_watermark: { class: 'no-watermark', text: '无水印' },
-            skipped: { class: 'skipped', text: '已跳过' },
-        };
-
-        const config = statusMap[status] || statusMap.pending;
-        badge.className = `status-badge ${config.class}`;
-        text.textContent = config.text;
-    },
-
-    /**
-     * 更新进度显示
-     */
-    updateProgress(current, total) {
-        document.getElementById('progress-count').textContent = `${current}/${total}`;
-        document.getElementById('current-index').textContent = current + 1;
-        document.getElementById('total-images').textContent = total;
-    },
-
-    /**
-     * 更新文件路径显示
-     */
-    updateFilePath(path) {
-        document.getElementById('current-path').textContent = path || '未选择文件';
-    },
-
-    /**
-     * 显示图片
-     */
-    showImage(base64Data) {
-        const display = document.getElementById('image-display');
-        const placeholder = document.getElementById('image-placeholder');
-        const indexDiv = document.getElementById('image-index');
-
-        display.src = `data:image/jpeg;base64,${base64Data}`;
-        display.style.display = 'block';
-        placeholder.style.display = 'none';
-        indexDiv.style.display = 'block';
-    },
-
-    /**
-     * 隐藏图片
-     */
-    hideImage() {
-        const display = document.getElementById('image-display');
-        const placeholder = document.getElementById('image-placeholder');
-        const indexDiv = document.getElementById('image-index');
-
-        display.style.display = 'none';
-        placeholder.style.display = 'flex';
-        indexDiv.style.display = 'none';
-    },
-
-    /**
-     * 显示加载中
-     */
-    showLoading() {
-        const placeholder = document.getElementById('image-placeholder');
-        placeholder.innerHTML = `
-            <div class="loading-spinner"></div>
-            <p>加载中...</p>
-        `;
-        placeholder.style.display = 'flex';
-        document.getElementById('image-display').style.display = 'none';
-    },
-
-    /**
-     * 渲染类型列表到侧边栏
-     */
-    renderTypeList(types, activeType) {
-        const list = document.getElementById('type-list');
-        list.innerHTML = types.map(type => {
-            const target = type.target_count || {};
-            const current = type.current_count || {};
-            const targetTotal = (target.watermarked || 0) + (target.non_watermarked || 0);
-            const currentTotal = (current.watermarked || 0) + (current.non_watermarked || 0);
-
-            // 计算完成状态
-            const hasTarget = targetTotal > 0;
-            const isComplete = hasTarget && currentTotal >= targetTotal;
-            const progressText = hasTarget
-                ? `${currentTotal}/${targetTotal}`
-                : `${type.annotated_count}/${type.total_images}`;
-            const statusIcon = isComplete ? '✅' : '';
-
-            return `
-            <li class="type-item ${type.name === activeType ? 'active' : ''} ${isComplete ? 'complete' : ''}" 
-                onclick="selectType('${type.name}')">
-                <div class="checkbox">${type.name === activeType ? '✓' : ''}</div>
-                <span class="name">${type.name} ${statusIcon}</span>
-                <span class="count ${isComplete ? 'complete' : ''}">${progressText}</span>
-            </li>
-        `}).join('');
-    },
-
-    /**
-     * 渲染类型下拉选择器
-     */
-    renderTypeSelector(types, activeType) {
-        const selector = document.getElementById('dataset-type');
-        selector.innerHTML = `
-            <option value="">请选择数据类型</option>
-            ${types.map(type => `
-                <option value="${type.name}" ${type.name === activeType ? 'selected' : ''}>
-                    ${type.name} (${type.annotated_count}/${type.total_images})
-                </option>
-            `).join('')}
-        `;
-    },
-
-    /**
-     * 渲染管理列表
-     */
-    renderManageList(types) {
-        const list = document.getElementById('manage-list');
-        if (types.length === 0) {
-            list.innerHTML = '<p style="color: var(--text-muted); text-align: center;">暂无数据类型</p>';
+        if (datasets.length === 0) {
+            elements.datasetList.innerHTML = '<div style="padding: 1rem; color: #64748b; font-size: 0.9rem; text-align: center;">暂无数据类型</div>';
             return;
         }
 
-        list.innerHTML = types.map(type => {
-            // 显示目录数量
-            const dirs = type.image_dirs || [];
-            const dirCount = dirs.length;
-            const dirInfo = dirCount === 1
-                ? dirs[0].split('/').slice(-2).join('/')
-                : `${dirCount} 个目录`;
-            const fullPaths = dirs.join('\n');
+        datasets.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-            return `
-            <div class="manage-item">
-                <div class="manage-item-info">
-                    <div class="manage-item-name">${type.name}</div>
-                    <div class="manage-item-path" title="${fullPaths}">
-                        ${dirInfo} · ${type.total_images} 张图片
-                    </div>
+        datasets.forEach(dataset => {
+            const el = document.createElement('div');
+            el.className = `dataset-item ${dataset.name === currentName ? 'active' : ''}`;
+            el.onclick = () => window.dispatchEvent(new CustomEvent('dataset-select', { detail: dataset.name }));
+
+            el.innerHTML = `
+                <div class="dataset-info">
+                    <span class="dataset-name">${dataset.name}</span>
                 </div>
-                <div class="manage-item-actions">
-                    <button class="btn btn-secondary btn-sm" onclick="editType('${type.name}')">编辑</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteType('${type.name}')">删除</button>
-                </div>
-            </div>
-        `}).join('');
+            `;
+            elements.datasetList.appendChild(el);
+        });
     },
-};
 
-// ============ 模态框控制 ============
+    /**
+     * Update the main image display
+     */
+    updateImageDisplay(imageState) {
+        const { data, path, status, index, total } = imageState;
 
-function showAddTypeModal() {
-    document.getElementById('modal-title').textContent = '添加数据类型';
-    document.getElementById('type-form').reset();
-    document.getElementById('type-name').disabled = false;
-    document.getElementById('type-modal').classList.add('active');
-    closeManageModal();
-}
+        // Counter
+        elements.counterCurrent.textContent = total > 0 ? index + 1 : 0;
+        elements.counterTotal.textContent = total;
 
-function closeModal() {
-    document.getElementById('type-modal').classList.remove('active');
-}
+        // Path Name
+        if (path) {
+            const filename = path.split(/[/\\]/).pop(); // Simple basename
+            elements.currentImageName.textContent = filename;
+        } else {
+            elements.currentImageName.textContent = '-';
+        }
 
-function showManageModal() {
-    document.getElementById('manage-modal').classList.add('active');
-    refreshManageList();
-}
+        // Image Content
+        if (data) {
+            elements.mainImage.src = `data:image/jpeg;base64,${data}`;
+            elements.mainImage.classList.remove('hidden');
+            elements.emptyState.classList.add('hidden');
 
-function closeManageModal() {
-    document.getElementById('manage-modal').classList.remove('active');
-}
+            // Reset Zoom
+            this.resetZoom();
+        } else {
+            elements.mainImage.classList.add('hidden');
+            if (total === 0) {
+                elements.emptyState.classList.remove('hidden');
+            }
+        }
+    },
 
-async function refreshManageList() {
-    try {
-        const types = await api.getTypes();
-        ui.renderManageList(types);
-    } catch (error) {
-        ui.showToast('加载失败: ' + error.message, 'error');
+    // Zoom & Pan State
+    transform: { scale: 1, x: 0, y: 0 },
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+
+    resetZoom() {
+        this.transform = { scale: 1, x: 0, y: 0 };
+        this.applyTransform();
+    },
+
+    applyTransform() {
+        elements.mainImage.style.transform = `translate(${this.transform.x}px, ${this.transform.y}px) scale(${this.transform.scale})`;
+    },
+
+    initZoom() {
+        const wrapper = elements.imageWrapper;
+
+        // Wheel Zoom
+        wrapper.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.max(0.1, Math.min(10, this.transform.scale * delta)); // Limit zoom 0.1x to 10x
+
+            this.transform.scale = newScale;
+            this.applyTransform();
+        });
+
+        // Drag - Mouse Down
+        wrapper.addEventListener('mousedown', (e) => {
+            if (e.target.parentElement.classList.contains('empty-state')) return; // Don't drag empty state
+            this.isDragging = true;
+            this.startX = e.clientX - this.transform.x;
+            this.startY = e.clientY - this.transform.y;
+            wrapper.classList.add('grabbing');
+        });
+
+        // Drag - Mouse Move
+        window.addEventListener('mousemove', (e) => {
+            if (!this.isDragging) return;
+            e.preventDefault(); // Prevent text selection
+            this.transform.x = e.clientX - this.startX;
+            this.transform.y = e.clientY - this.startY;
+            this.applyTransform();
+        });
+
+        // Drag - Mouse Up
+        window.addEventListener('mouseup', () => {
+            this.isDragging = false;
+            wrapper.classList.remove('grabbing');
+        });
+    },
+
+    updateStats(stats) {
+        const { watermarked, noWatermarked, targetWatermarked, targetNoWatermarked } = stats;
+
+        elements.statWm.textContent = `${watermarked}/${targetWatermarked}`;
+        elements.statNwm.textContent = `${noWatermarked}/${targetNoWatermarked}`;
+
+        // Visual cues for completion
+        if (targetWatermarked > 0 && watermarked >= targetWatermarked) {
+            elements.statPillWm.classList.add('complete');
+        } else {
+            elements.statPillWm.classList.remove('complete');
+        }
+
+        if (targetNoWatermarked > 0 && noWatermarked >= targetNoWatermarked) {
+            elements.statPillNwm.classList.add('complete');
+        } else {
+            elements.statPillNwm.classList.remove('complete');
+        }
+    },
+
+    setLoading(isLoading) {
+        if (isLoading) {
+            elements.loadingSpinner.classList.remove('hidden');
+        } else {
+            elements.loadingSpinner.classList.add('hidden');
+        }
+    },
+
+    setHeader(datasetName) {
+        elements.currentDatasetName.textContent = datasetName || "请选择数据类型";
+        if (!datasetName) {
+            elements.currentImageName.textContent = "-";
+            elements.statsGroup.style.opacity = '0.5';
+        } else {
+            elements.statsGroup.style.opacity = '1';
+        }
+    },
+
+    /**
+     * Toast Notifications
+     */
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        let icon = 'ℹ️';
+        if (type === 'success') icon = '✅';
+        if (type === 'error') icon = '❌';
+        if (type === 'warning') icon = '⚠️';
+
+        toast.innerHTML = `
+            <span class="toast-icon">${icon}</span>
+            <span class="toast-message">${message}</span>
+        `;
+
+        elements.toastContainer.appendChild(toast);
+
+        // Remove after 3s
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    },
+
+    /**
+     * Modal
+     */
+    toggleModal(show) {
+        if (show) {
+            elements.datasetModal.classList.add('active');
+        } else {
+            elements.datasetModal.classList.remove('active');
+            elements.modalForm.reset();
+        }
+    },
+
+    getModalData() {
+        const name = document.getElementById('input-name').value.trim();
+        const dirs = document.getElementById('input-dirs').value.trim().split('\n').filter(s => s.trim());
+        const exclude = document.getElementById('input-exclude').value.trim().split('\n').filter(s => s.trim());
+        const recursive = document.getElementById('input-recursive').checked;
+
+        const targetWm = parseInt(document.getElementById('input-target-wm').value) || 0;
+        const targetNwm = parseInt(document.getElementById('input-target-nwm').value) || 0;
+
+        return { name, dirs, exclude, recursive, targetWm, targetNwm };
+    },
+
+    /**
+     * Trigger a visual highlight on a button
+     */
+    highlightButton(id) {
+        const btn = document.getElementById(id);
+        if (btn) {
+            // Remove first to reset if clicked rapidly
+            btn.classList.remove('active-key');
+            // Force reflow
+            void btn.offsetWidth;
+            btn.classList.add('active-key');
+            setTimeout(() => btn.classList.remove('active-key'), 150);
+        }
     }
-}
+};

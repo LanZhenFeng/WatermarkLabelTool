@@ -1,10 +1,11 @@
 dataset_types:
 - current_count:
-    non_watermarked: 0
-    watermarked: 3
+    non_watermarked: 13
+    watermarked: 73
   description: 测试
   exclude_dirs: []
-  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/watermark
+  image_dirs:
+  - /Volumes/SN750/Work/Watermark/test/20251209/watermark
   name: 测试数据
   priority: 1
   recursive: true
@@ -16,7 +17,8 @@ dataset_types:
     watermarked: 0
   description: Test description
   exclude_dirs: []
-  image_dir: /tmp
+  image_dirs:
+  - /tmp
   name: ProductData
   priority: 1
   recursive: true
@@ -29,7 +31,8 @@ dataset_types:
   description: ''
   exclude_dirs:
   - nowatermark
-  image_dir: /Volumes/SN750/Work/Watermark/test/20251209
+  image_dirs:
+  - /Volumes/SN750/Work/Watermark/test/20251209
   name: RecursiveTest
   priority: 1
   recursive: true
@@ -41,7 +44,8 @@ dataset_types:
     watermarked: 0
   description: ''
   exclude_dirs: []
-  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/watermark
+  image_dirs:
+  - /Volumes/SN750/Work/Watermark/test/20251209/watermark
   name: NonRecursiveTest
   priority: 1
   recursive: false
@@ -54,7 +58,8 @@ dataset_types:
   description: ''
   exclude_dirs:
   - watermark
-  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/
+  image_dirs:
+  - /Volumes/SN750/Work/Watermark/test/20251209/
   name: HighLevelRecursive
   priority: 1
   recursive: true
@@ -66,7 +71,8 @@ dataset_types:
     watermarked: 0
   description: ''
   exclude_dirs: []
-  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/
+  image_dirs:
+  - /Volumes/SN750/Work/Watermark/test/20251209/
   name: HighLevelNonRecursive
   priority: 1
   recursive: false
@@ -78,13 +84,157 @@ dataset_types:
     watermarked: 0
   description: 递归扫描测试
   exclude_dirs: []
-  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/watermark
+  image_dirs:
+  - /Volumes/SN750/Work/Watermark/test/20251209/watermark
   name: 递归测试
   priority: 1
   recursive: true
   target_count:
     non_watermarked: 10
     watermarked: 10
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: xxx
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: xxxxx
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: xxxxxxxx
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: 事事顺心
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: 饭撒上
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: 陈先生啊吃洒
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: 三大队
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: 撒饭吃洒
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: 大宋
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: 福师大
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dirs:
+  - /tmp
+  name: 上的撒
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 0
+    watermarked: 0
 settings:
   auto_save_interval: 10
   preload_window: 10
