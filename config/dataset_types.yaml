@@ -1,7 +1,7 @@
 dataset_types:
 - current_count:
-    non_watermarked: 77
-    watermarked: 88
+    non_watermarked: 78
+    watermarked: 89
   description: 测试
   exclude_dirs: []
   image_dirs:

@@ -283,6 +283,61 @@ a {
     border-radius: var(--radius-sm);
 }
 
+/* Status Badge */
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.status-badge.pending .status-dot {
+    background: var(--text-muted);
+}
+
+.status-badge.watermarked {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.status-badge.watermarked .status-dot {
+    background: var(--danger);
+    box-shadow: 0 0 8px var(--danger);
+}
+
+.status-badge.no-watermark {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.status-badge.no-watermark .status-dot {
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+
+.status-badge.skipped {
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.status-badge.skipped .status-dot {
+    background: var(--warning);
+    box-shadow: 0 0 8px var(--warning);
+}
+
 .actions {
     display: flex;
     gap: var(--spacing-md);

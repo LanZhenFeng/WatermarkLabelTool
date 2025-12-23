@@ -81,6 +81,11 @@ export const ui = {
             elements.currentImageName.textContent = '-';
         }
 
+        // Update status badge
+        if (status) {
+            this.updateStatusBadge(status);
+        }
+
         // Image Content
         if (data) {
             elements.mainImage.src = `data:image/jpeg;base64,${data}`;
@@ -95,6 +100,26 @@ export const ui = {
                 elements.emptyState.classList.remove('hidden');
             }
         }
+    },
+
+    /**
+     * Update the status badge
+     */
+    updateStatusBadge(status) {
+        const badge = document.getElementById('status-badge');
+        const text = document.getElementById('status-text');
+        if (!badge || !text) return;
+
+        const statusMap = {
+            pending: { class: 'pending', text: '待标注' },
+            watermarked: { class: 'watermarked', text: '有水印' },
+            no_watermark: { class: 'no-watermark', text: '无水印' },
+            skipped: { class: 'skipped', text: '已跳过' },
+        };
+
+        const config = statusMap[status] || statusMap.pending;
+        badge.className = `status-badge ${config.class}`;
+        text.textContent = config.text;
     },
 
     // Zoom & Pan State
