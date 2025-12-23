@@ -57,7 +57,7 @@ async function selectType(typeName) {
 }
 
 // 更新目标进度统计面板
-function updateTargetStats(typeName) {
+async function updateTargetStats(typeName) {
     const type = state.types.find(t => t.name === typeName);
     const statsPanel = document.getElementById('target-stats');
 
@@ -67,7 +67,6 @@ function updateTargetStats(typeName) {
     }
 
     const target = type.target_count || {};
-    const current = type.current_count || {};
     const hasTarget = (target.watermarked || 0) + (target.non_watermarked || 0) > 0;
 
     if (!hasTarget) {
@@ -77,21 +76,28 @@ function updateTargetStats(typeName) {
 
     statsPanel.style.display = 'flex';
 
-    // 更新有水印统计
-    const wmCurrent = current.watermarked || 0;
-    const wmTarget = target.watermarked || 0;
-    const wmComplete = wmTarget > 0 && wmCurrent >= wmTarget;
-    const wmEl = document.getElementById('stat-watermarked');
-    wmEl.textContent = `${wmCurrent}/${wmTarget}`;
-    wmEl.className = `stat-value ${wmComplete ? 'complete' : ''}`;
+    // 从进度API获取实际的标注统计（而非配置文件中的累积值）
+    try {
+        const progress = await api.getProgress(typeName);
 
-    // 更新无水印统计
-    const nwmCurrent = current.non_watermarked || 0;
-    const nwmTarget = target.non_watermarked || 0;
-    const nwmComplete = nwmTarget > 0 && nwmCurrent >= nwmTarget;
-    const nwmEl = document.getElementById('stat-no-watermark');
-    nwmEl.textContent = `${nwmCurrent}/${nwmTarget}`;
-    nwmEl.className = `stat-value ${nwmComplete ? 'complete' : ''}`;
+        // 更新有水印统计
+        const wmCurrent = progress.watermarked_count || 0;
+        const wmTarget = target.watermarked || 0;
+        const wmComplete = wmTarget > 0 && wmCurrent >= wmTarget;
+        const wmEl = document.getElementById('stat-watermarked');
+        wmEl.textContent = `${wmCurrent}/${wmTarget}`;
+        wmEl.className = `stat-value ${wmComplete ? 'complete' : ''}`;
+
+        // 更新无水印统计
+        const nwmCurrent = progress.non_watermarked_count || 0;
+        const nwmTarget = target.non_watermarked || 0;
+        const nwmComplete = nwmTarget > 0 && nwmCurrent >= nwmTarget;
+        const nwmEl = document.getElementById('stat-no-watermark');
+        nwmEl.textContent = `${nwmCurrent}/${nwmTarget}`;
+        nwmEl.className = `stat-value ${nwmComplete ? 'complete' : ''}`;
+    } catch (error) {
+        console.warn('获取进度失败:', error);
+    }
 }
 
 async function saveType() {
@@ -268,6 +274,9 @@ async function annotate(label) {
 
         // 刷新类型列表显示最新进度
         await loadTypes();
+
+        // 更新目标统计面板
+        await updateTargetStats(state.currentType);
 
     } catch (error) {
         ui.showToast('标注失败: ' + error.message, 'error');
