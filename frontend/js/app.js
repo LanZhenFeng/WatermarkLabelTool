@@ -233,6 +233,76 @@ async function createNewDataset() {
     }
 }
 
+async function handleRedo() {
+    try {
+        const res = await api.redo();
+        if (res.success) {
+            ui.showToast('重做成功', 'info');
+            await loadCurrentImage();
+            await updateProgress();
+        } else {
+            ui.showToast(res.message, 'warning');
+        }
+    } catch (err) {
+        ui.showToast('重做失败', 'error');
+    }
+}
+
+let editingDataset = null;
+
+function showManageModal() {
+    const datasets = store.getState().datasets;
+    ui.renderManageList(datasets, editDataset, deleteDataset);
+    ui.toggleManageModal(true);
+}
+
+function editDataset(name) {
+    const dataset = store.getState().datasets.find(d => d.name === name);
+    if (!dataset) return;
+
+    editingDataset = name;
+    ui.toggleManageModal(false);
+    ui.fillModalForEdit(dataset);
+    ui.toggleModal(true);
+}
+
+async function deleteDataset(name) {
+    if (!confirm(`确定要删除类型 "${name}" 吗？`)) return;
+
+    try {
+        await api.deleteType(name);
+        ui.showToast('删除成功', 'success');
+
+        if (store.getState().currentDataset === name) {
+            store.updateDataset(null);
+            store.updateImage({ data: null, path: null, total: 0 });
+            ui.setHeader(null);
+        }
+
+        await refreshDatasets();
+        showManageModal(); // Refresh the list
+    } catch (err) {
+        ui.showToast('删除失败: ' + err.message, 'error');
+    }
+}
+
+async function saveDataset() {
+    const data = ui.getModalData();
+
+    if (editingDataset) {
+        // Update existing - currently API doesn't support full update, so just handle what we can
+        // Just close and refresh for now (editDataset is mainly for viewing)
+        ui.showToast('暂时只支持查看，请直接删除后重新创建', 'warning');
+        editingDataset = null;
+        ui.resetModalForNew();
+        ui.toggleModal(false);
+        return;
+    }
+
+    await createNewDataset();
+    editingDataset = null;
+}
+
 // ============ Event Bindings ============
 
 function bindEvents() {
@@ -247,6 +317,7 @@ function bindEvents() {
     document.getElementById('btn-prev').onclick = () => handleNavigate('prev');
     document.getElementById('btn-next').onclick = () => handleNavigate('next');
     document.getElementById('btn-undo').onclick = handleUndo;
+    document.getElementById('btn-redo').onclick = handleRedo;
 
     // Action Buttons
     document.getElementById('btn-watermarked').onclick = () => handleAnnotation(1);
@@ -268,17 +339,30 @@ function bindEvents() {
     };
 
     safeBind('btn-add-type', () => {
-        console.log('Open modal via Add button');
+        ui.resetModalForNew();
         ui.toggleModal(true);
     });
-    safeBind('btn-manage', () => {
-        console.log('Open modal via Manage button');
+    safeBind('btn-manage', showManageModal);
+
+    // Manage Modal
+    safeBind('manage-modal-close', () => ui.toggleManageModal(false));
+    safeBind('manage-add-new', () => {
+        ui.toggleManageModal(false);
+        ui.resetModalForNew();
         ui.toggleModal(true);
     });
 
-    safeBind('modal-close', () => ui.toggleModal(false));
-    safeBind('modal-cancel', () => ui.toggleModal(false));
-    safeBind('modal-save', createNewDataset);
+    safeBind('modal-close', () => {
+        editingDataset = null;
+        ui.resetModalForNew();
+        ui.toggleModal(false);
+    });
+    safeBind('modal-cancel', () => {
+        editingDataset = null;
+        ui.resetModalForNew();
+        ui.toggleModal(false);
+    });
+    safeBind('modal-save', saveDataset);
 
     // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
@@ -312,14 +396,23 @@ function bindEvents() {
                 handleNavigate('prev');
                 break;
             case 'z':
-                if (e.ctrlKey || e.metaKey) handleUndo();
-                break;
-            case 's':
                 if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
-                    handleSave();
+                    handleUndo();
                 }
                 break;
+            case 'y':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    handleRedo();
+                }
+                break;
+        }
+
+        // Ctrl+S handling (separate because 's' also used for skip without Ctrl)
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            handleSave();
         }
     });
 

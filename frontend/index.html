@@ -136,6 +136,9 @@
                     <button class="tool-btn" id="btn-undo" title="撤销 (Ctrl+Z)">
                         <span class="icon">↩</span>
                     </button>
+                    <button class="tool-btn" id="btn-redo" title="重做 (Ctrl+Y)">
+                        <span class="icon">↪</span>
+                    </button>
                 </div>
             </div>
 
@@ -202,6 +205,22 @@
             <div class="modal-footer">
                 <button class="btn btn-ghost" id="modal-cancel">取消</button>
                 <button class="btn btn-primary" id="modal-save">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Modal -->
+    <div class="modal-backdrop" id="manage-modal">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h3>管理数据类型</h3>
+                <button class="close-btn" id="manage-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="manage-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="manage-add-new">添加新类型</button>
             </div>
         </div>
     </div>

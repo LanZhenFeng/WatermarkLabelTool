@@ -873,3 +873,58 @@ textarea:focus {
 .full-width {
     width: 100%;
 }
+
+/* Manage List */
+.manage-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.manage-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.manage-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.manage-item-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.manage-item-path {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.manage-item-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.btn-danger {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+}

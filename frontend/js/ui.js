@@ -251,5 +251,70 @@ export const ui = {
             btn.classList.add('active-key');
             setTimeout(() => btn.classList.remove('active-key'), 150);
         }
+    },
+
+    /**
+     * Manage Modal
+     */
+    toggleManageModal(show) {
+        const modal = document.getElementById('manage-modal');
+        if (show) {
+            modal.classList.add('active');
+        } else {
+            modal.classList.remove('active');
+        }
+    },
+
+    renderManageList(datasets, onEdit, onDelete) {
+        const list = document.getElementById('manage-list');
+        if (!list) return;
+
+        if (datasets.length === 0) {
+            list.innerHTML = '<div style="padding: 1rem; color: var(--text-muted); text-align: center;">暂无数据类型</div>';
+            return;
+        }
+
+        list.innerHTML = datasets.map(d => {
+            const dirs = d.image_dirs || [];
+            const dirInfo = dirs.length === 1 ? dirs[0].split('/').slice(-2).join('/') : `${dirs.length} 个目录`;
+            return `
+            <div class="manage-item" data-name="${d.name}">
+                <div class="manage-item-info">
+                    <div class="manage-item-name">${d.name}</div>
+                    <div class="manage-item-path">${dirInfo}</div>
+                </div>
+                <div class="manage-item-actions">
+                    <button class="btn btn-sm btn-secondary" data-action="edit">编辑</button>
+                    <button class="btn btn-sm btn-danger" data-action="delete">删除</button>
+                </div>
+            </div>
+            `;
+        }).join('');
+
+        // Bind events
+        list.querySelectorAll('[data-action="edit"]').forEach(btn => {
+            btn.onclick = () => onEdit(btn.closest('.manage-item').dataset.name);
+        });
+        list.querySelectorAll('[data-action="delete"]').forEach(btn => {
+            btn.onclick = () => onDelete(btn.closest('.manage-item').dataset.name);
+        });
+    },
+
+    /**
+     * Fill edit modal with existing data
+     */
+    fillModalForEdit(dataset) {
+        document.getElementById('input-name').value = dataset.name;
+        document.getElementById('input-name').disabled = true; // Can't change name
+        document.getElementById('input-dirs').value = (dataset.image_dirs || []).join('\n');
+        document.getElementById('input-exclude').value = (dataset.exclude_dirs || []).join('\n');
+        document.getElementById('input-recursive').checked = dataset.recursive !== false;
+        document.getElementById('input-target-wm').value = (dataset.target_count && dataset.target_count.watermarked) || 0;
+        document.getElementById('input-target-nwm').value = (dataset.target_count && dataset.target_count.non_watermarked) || 0;
+    },
+
+    resetModalForNew() {
+        document.getElementById('input-name').disabled = false;
+        elements.modalForm.reset();
     }
 };
