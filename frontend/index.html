@@ -153,9 +153,10 @@
                         <input type="text" class="form-input" id="type-name" placeholder="如: 产品图" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">图片目录</label>
-                        <input type="text" class="form-input" id="type-dir" placeholder="/path/to/images" required>
-                        <small class="form-hint">输入图片所在目录的绝对路径</small>
+                        <label class="form-label">图片目录 <span class="form-hint-inline">(每行一个，支持多个目录)</span></label>
+                        <textarea class="form-input" id="type-dirs" rows="3"
+                            placeholder="/path/to/images1&#10;/path/to/images2" required></textarea>
+                        <small class="form-hint">输入图片所在目录的绝对路径，每行一个</small>
                     </div>
                     <div class="form-group">
                         <label class="form-checkbox">

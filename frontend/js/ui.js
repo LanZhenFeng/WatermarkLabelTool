@@ -161,18 +161,20 @@ const ui = {
         }
 
         list.innerHTML = types.map(type => {
-            // 截断长路径，只显示最后两层目录
-            const pathParts = type.image_dir.split('/').filter(p => p);
-            const shortPath = pathParts.length > 2
-                ? '.../' + pathParts.slice(-2).join('/')
-                : type.image_dir;
+            // 显示目录数量
+            const dirs = type.image_dirs || [];
+            const dirCount = dirs.length;
+            const dirInfo = dirCount === 1
+                ? dirs[0].split('/').slice(-2).join('/')
+                : `${dirCount} 个目录`;
+            const fullPaths = dirs.join('\n');
 
             return `
             <div class="manage-item">
                 <div class="manage-item-info">
                     <div class="manage-item-name">${type.name}</div>
-                    <div class="manage-item-path" title="${type.image_dir}">
-                        ${shortPath} · ${type.total_images} 张图片
+                    <div class="manage-item-path" title="${fullPaths}">
+                        ${dirInfo} · ${type.total_images} 张图片
                     </div>
                 </div>
                 <div class="manage-item-actions">

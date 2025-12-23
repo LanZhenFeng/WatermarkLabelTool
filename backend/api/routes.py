@@ -39,7 +39,7 @@ async def create_type(data: DatasetTypeCreate):
     return dataset_service.add_type(
         name=data.name,
         description=data.description,
-        image_dir=data.image_dir,
+        image_dirs=data.image_dirs,
         target_watermarked=data.target_count.watermarked,
         target_non_watermarked=data.target_count.non_watermarked,
         priority=data.priority,

@@ -102,7 +102,8 @@ async function updateTargetStats(typeName) {
 
 async function saveType() {
     const name = document.getElementById('type-name').value.trim();
-    const imageDir = document.getElementById('type-dir').value.trim();
+    const dirsText = document.getElementById('type-dirs').value.trim();
+    const imageDirs = dirsText ? dirsText.split('\n').map(s => s.trim()).filter(s => s) : [];
     const description = document.getElementById('type-desc').value.trim();
     const recursive = document.getElementById('type-recursive').checked;
     const excludeText = document.getElementById('type-exclude').value.trim();
@@ -111,8 +112,8 @@ async function saveType() {
     const targetNoWatermark = parseInt(document.getElementById('target-no-watermark').value) || 0;
     const priority = parseInt(document.getElementById('type-priority').value) || 1;
 
-    if (!name || !imageDir) {
-        ui.showToast('请填写类型名称和图片目录', 'warning');
+    if (!name || imageDirs.length === 0) {
+        ui.showToast('请填写类型名称和至少一个图片目录', 'warning');
         return;
     }
 
@@ -120,7 +121,7 @@ async function saveType() {
         await api.createType({
             name,
             description,
-            image_dir: imageDir,
+            image_dirs: imageDirs,
             recursive,
             exclude_dirs: excludeDirs,
             target_count: {
@@ -148,7 +149,7 @@ async function editType(name) {
     document.getElementById('modal-title').textContent = '编辑数据类型';
     document.getElementById('type-name').value = type.name;
     document.getElementById('type-name').disabled = true;
-    document.getElementById('type-dir').value = type.image_dir;
+    document.getElementById('type-dirs').value = (type.image_dirs || []).join('\n');
     document.getElementById('type-recursive').checked = type.recursive !== false;
     document.getElementById('type-exclude').value = (type.exclude_dirs || []).join('\n');
     document.getElementById('type-desc').value = type.description;

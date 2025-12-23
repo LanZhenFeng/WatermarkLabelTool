@@ -24,7 +24,7 @@ class DatasetType(BaseModel):
     """数据类型配置"""
     name: str
     description: str = ""
-    image_dir: str
+    image_dirs: List[str] = Field(default_factory=list)  # 支持多个图片目录
     recursive: bool = True  # 是否递归扫描子目录
     exclude_dirs: List[str] = Field(default_factory=list)  # 排除的子目录名称
     target_count: TargetCount = Field(default_factory=TargetCount)

@@ -31,7 +31,7 @@ class DatasetTypeCreate(BaseModel):
     """创建数据类型请求"""
     name: str
     description: str = ""
-    image_dir: str
+    image_dirs: List[str] = Field(default_factory=list)  # 支持多个图片目录
     recursive: bool = True  # 是否递归扫描子目录
     exclude_dirs: List[str] = Field(default_factory=list)  # 排除的子目录
     target_count: TargetCountSchema = Field(default_factory=TargetCountSchema)
@@ -44,7 +44,7 @@ class DatasetTypeResponse(BaseModel):
     
     name: str
     description: str
-    image_dir: str
+    image_dirs: List[str] = Field(default_factory=list)  # 支持多个图片目录
     recursive: bool = True
     exclude_dirs: List[str] = Field(default_factory=list)
     target_count: TargetCountSchema

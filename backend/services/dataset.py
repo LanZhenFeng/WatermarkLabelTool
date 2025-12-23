@@ -93,9 +93,16 @@ class DatasetService:
         if dt is None:
             return []
         
-        images = self.scan_images(dt.image_dir, dt.recursive, dt.exclude_dirs)
-        self._image_cache[dataset_type] = images
-        return images
+        # 扫描所有配置的目录
+        all_images = []
+        for image_dir in dt.image_dirs:
+            images = self.scan_images(image_dir, dt.recursive, dt.exclude_dirs)
+            all_images.extend(images)
+        
+        # 去重并排序
+        all_images = sorted(set(all_images))
+        self._image_cache[dataset_type] = all_images
+        return all_images
     
     def get_image_info(self, dataset_type: str, index: int) -> Optional[ImageInfo]:
         """获取指定索引的图片信息"""
@@ -141,7 +148,7 @@ class DatasetService:
             result.append(DatasetTypeResponse(
                 name=dt.name,
                 description=dt.description,
-                image_dir=dt.image_dir,
+                image_dirs=dt.image_dirs,
                 recursive=dt.recursive,
                 exclude_dirs=dt.exclude_dirs,
                 target_count=dt.target_count.model_dump(),
@@ -153,7 +160,7 @@ class DatasetService:
         
         return sorted(result, key=lambda x: x.priority)
     
-    def add_type(self, name: str, description: str, image_dir: str,
+    def add_type(self, name: str, description: str, image_dirs: List[str],
                  target_watermarked: int = 0, target_non_watermarked: int = 0,
                  priority: int = 1, recursive: bool = True,
                  exclude_dirs: List[str] = None) -> DatasetTypeResponse:
@@ -163,7 +170,7 @@ class DatasetService:
         dt = DatasetType(
             name=name,
             description=description,
-            image_dir=image_dir,
+            image_dirs=image_dirs if image_dirs else [],
             recursive=recursive,
             exclude_dirs=exclude_dirs or [],
             target_count=TargetCount(
@@ -188,7 +195,7 @@ class DatasetService:
         return DatasetTypeResponse(
             name=dt.name,
             description=dt.description,
-            image_dir=dt.image_dir,
+            image_dirs=dt.image_dirs,
             recursive=dt.recursive,
             exclude_dirs=dt.exclude_dirs,
             target_count=dt.target_count.model_dump(),
