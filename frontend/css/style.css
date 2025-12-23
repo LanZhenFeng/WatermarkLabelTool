@@ -297,6 +297,10 @@ body {
 .type-item .name {
     flex: 1;
     font-size: 14px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .type-item .count {
@@ -581,7 +585,8 @@ body {
     width: 90%;
     max-width: 500px;
     max-height: 80vh;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     transform: scale(0.9);
     transition: all var(--transition-normal);
 }
@@ -596,6 +601,7 @@ body {
     justify-content: space-between;
     padding: 16px 20px;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .modal-title {
@@ -630,6 +636,51 @@ body {
     gap: 12px;
     padding: 16px 20px;
     border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+/* ============ 管理列表项 ============ */
+
+.manage-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+}
+
+.manage-item-info {
+    flex: 1;
+    min-width: 0;
+    /* 允许内容收缩 */
+    overflow: hidden;
+}
+
+.manage-item-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.manage-item-path {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.manage-item-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
 }
 
 /* ============ 表单 ============ */

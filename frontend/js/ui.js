@@ -160,25 +160,27 @@ const ui = {
             return;
         }
 
-        list.innerHTML = types.map(type => `
-            <div style="display: flex; align-items: center; justify-content: space-between; 
-                        padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px;">
-                <div>
-                    <div style="font-weight: 500;">${type.name}</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">
-                        ${type.image_dir} · ${type.total_images} 张图片
+        list.innerHTML = types.map(type => {
+            // 截断长路径，只显示最后两层目录
+            const pathParts = type.image_dir.split('/').filter(p => p);
+            const shortPath = pathParts.length > 2
+                ? '.../' + pathParts.slice(-2).join('/')
+                : type.image_dir;
+
+            return `
+            <div class="manage-item">
+                <div class="manage-item-info">
+                    <div class="manage-item-name">${type.name}</div>
+                    <div class="manage-item-path" title="${type.image_dir}">
+                        ${shortPath} · ${type.total_images} 张图片
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-secondary" onclick="editType('${type.name}')" style="padding: 6px 12px;">
-                        编辑
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteType('${type.name}')" style="padding: 6px 12px;">
-                        删除
-                    </button>
+                <div class="manage-item-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="editType('${type.name}')">编辑</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteType('${type.name}')">删除</button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     },
 };
 

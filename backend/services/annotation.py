@@ -264,6 +264,8 @@ class AnnotationService:
         old_label = None
         if image_path in self.annotations.get(dataset_type, {}):
             old_label = self.annotations[dataset_type][image_path].label
+            # 跳过时删除已有标注，这样统计才会正确
+            del self.annotations[dataset_type][image_path]
         
         self.skipped[dataset_type].add(image_path)
         self.image_status[dataset_type][image_path] = ImageStatus.SKIPPED
