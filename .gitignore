@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+.eggs/
+
+# Logs
+logs/
+*.log
+
+# Data (don't track user data)
+data/annotations/
+data/progress/
+data/preannotations/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Config (user-specific settings)
+# config/dataset_types.yaml  # Uncomment if you want to exclude config
+
+# Temporary files
+*.tmp
+*.temp

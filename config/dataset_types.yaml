@@ -1,0 +1,98 @@
+dataset_types:
+- current_count:
+    non_watermarked: 0
+    watermarked: 3
+  description: 测试
+  exclude_dirs: []
+  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/watermark
+  name: 测试数据
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 10
+    watermarked: 10
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: Test description
+  exclude_dirs: []
+  image_dir: /tmp
+  name: ProductData
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 5
+    watermarked: 5
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs:
+  - nowatermark
+  image_dir: /Volumes/SN750/Work/Watermark/test/20251209
+  name: RecursiveTest
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 10
+    watermarked: 10
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/watermark
+  name: NonRecursiveTest
+  priority: 1
+  recursive: false
+  target_count:
+    non_watermarked: 10
+    watermarked: 10
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs:
+  - watermark
+  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/
+  name: HighLevelRecursive
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 10
+    watermarked: 10
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: ''
+  exclude_dirs: []
+  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/
+  name: HighLevelNonRecursive
+  priority: 1
+  recursive: false
+  target_count:
+    non_watermarked: 10
+    watermarked: 10
+- current_count:
+    non_watermarked: 0
+    watermarked: 0
+  description: 递归扫描测试
+  exclude_dirs: []
+  image_dir: /Volumes/SN750/Work/Watermark/test/20251209/watermark
+  name: 递归测试
+  priority: 1
+  recursive: true
+  target_count:
+    non_watermarked: 10
+    watermarked: 10
+settings:
+  auto_save_interval: 10
+  preload_window: 10
+  supported_formats:
+  - jpg
+  - jpeg
+  - png
+  - webp
+  - bmp
+  - gif
+  - tiff
