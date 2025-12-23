@@ -83,6 +83,12 @@ const api = {
         return this.request(`/images/base64/${index}?dataset_type=${encodeURIComponent(datasetType)}`);
     },
 
+    async deleteImage(datasetType, imagePath) {
+        return this.request(`/images/delete?dataset_type=${encodeURIComponent(datasetType)}&image_path=${encodeURIComponent(imagePath)}`, {
+            method: 'DELETE',
+        });
+    },
+
     // ============ 标注管理 ============
 
     async createAnnotation(imagePath, label, datasetType) {

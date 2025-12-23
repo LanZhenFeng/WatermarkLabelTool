@@ -63,6 +63,13 @@ const keyboard = {
                 skipImage();
                 break;
 
+            // 删除图片
+            case 'x':
+            case 'delete':
+                event.preventDefault();
+                deleteCurrentImage();
+                break;
+
             // 上一张
             case 'a':
             case 'arrowleft':

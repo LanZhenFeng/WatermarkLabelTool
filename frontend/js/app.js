@@ -302,6 +302,29 @@ async function skipImage() {
     }
 }
 
+async function deleteCurrentImage() {
+    if (!state.currentType || !state.currentImage) {
+        ui.showToast('没有当前图片', 'warning');
+        return;
+    }
+
+    // 确认删除
+    const confirmed = confirm(`确定要删除这张图片吗？\n\n${state.currentImage.path}\n\n此操作不可恢复！`);
+    if (!confirmed) return;
+
+    try {
+        const result = await api.deleteImage(state.currentType, state.currentImage.path);
+        ui.showToast(result.message, 'success');
+
+        // 刷新列表并加载下一张
+        await loadTypes();
+        await loadCurrentImage();
+
+    } catch (error) {
+        ui.showToast('删除失败: ' + error.message, 'error');
+    }
+}
+
 // ============ 导航 ============
 
 async function navigateNext() {
@@ -372,6 +395,12 @@ async function saveProgress() {
     try {
         await api.saveProgress();
         ui.showToast('进度已保存', 'success');
+
+        // 刷新统计显示
+        await loadTypes();
+        if (state.currentType) {
+            await updateTargetStats(state.currentType);
+        }
     } catch (error) {
         ui.showToast('保存失败: ' + error.message, 'error');
     }

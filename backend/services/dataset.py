@@ -104,6 +104,14 @@ class DatasetService:
         self._image_cache[dataset_type] = all_images
         return all_images
     
+    def remove_image_from_cache(self, dataset_type: str, image_path: str):
+        """从缓存中移除已删除的图片"""
+        if dataset_type in self._image_cache:
+            cache = self._image_cache[dataset_type]
+            if image_path in cache:
+                cache.remove(image_path)
+                logger.info(f"从缓存移除图片: {image_path}")
+    
     def get_image_info(self, dataset_type: str, index: int) -> Optional[ImageInfo]:
         """获取指定索引的图片信息"""
         images = self.get_images(dataset_type)

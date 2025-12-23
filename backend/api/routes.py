@@ -102,6 +102,42 @@ async def get_images(
     }
 
 
+@router.delete("/images/delete")
+async def delete_image(dataset_type: str, image_path: str):
+    """删除图片文件（用于清理脏数据或重复数据）"""
+    from pathlib import Path
+    
+    path = Path(image_path)
+    
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="图片文件不存在")
+    
+    if not path.is_file():
+        raise HTTPException(status_code=400, detail="路径不是文件")
+    
+    try:
+        # 删除文件
+        path.unlink()
+        
+        # 从缓存中移除
+        dataset_service.remove_image_from_cache(dataset_type, image_path)
+        
+        # 如果有标注，也删除标注
+        if dataset_type in annotation_service.annotations:
+            if image_path in annotation_service.annotations[dataset_type]:
+                del annotation_service.annotations[dataset_type][image_path]
+        
+        if dataset_type in annotation_service.image_status:
+            if image_path in annotation_service.image_status[dataset_type]:
+                del annotation_service.image_status[dataset_type][image_path]
+        
+        logger.info(f"删除图片: {image_path}")
+        
+        return {"success": True, "message": f"已删除: {path.name}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"删除失败: {str(e)}")
+
+
 @router.get("/images/current", response_model=ImageInfo)
 async def get_current_image(
     dataset_type: str,
