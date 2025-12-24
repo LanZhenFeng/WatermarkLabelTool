@@ -460,6 +460,12 @@ a {
     border-radius: var(--radius-full);
     box-shadow: var(--shadow-lg);
     z-index: 20;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.floating-toolbar:hover {
+    opacity: 1;
 }
 
 .divider {
